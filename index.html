@@ -49,9 +49,68 @@
         .login-button:hover { background: #a00; }
         
         /* 🔥 ЧЕКБОКС ЗАПОМНИТЬ ПАРОЛЬ */
-        .remember-password { display: flex; align-items: center; gap: 8px; margin: 10px 0; }
-        .remember-password input[type="checkbox"] { width: 16px; height: 16px; margin: 0; }
-        .remember-password label { margin-bottom: 0; font-weight: normal; color: #555; font-size: 14px; }
+.remember-password { display: flex; align-items: center; gap: 8px; margin: 10px 0; }
+.remember-password input[type="checkbox"] { 
+    width: 16px; 
+    height: 16px; 
+    margin: 0; 
+    appearance: none;
+    -webkit-appearance: none;
+    border: 2px solid #333;
+    border-radius: 3px;
+    background: white;
+    cursor: pointer;
+    position: relative;
+}
+.remember-password input[type="checkbox"]:checked {
+    background: white;
+    border-color: #333;
+}
+.remember-password input[type="checkbox"]:checked::after {
+    content: "✕";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #000;
+    font-size: 12px;
+    font-weight: bold;
+}
+.remember-password label { margin-bottom: 0; font-weight: normal; color: #555; font-size: 14px; }
+
+/* 🔥 СТИЛИ ЧЕКБОКСОВ В ФИЛЬТРАХ */
+.checkbox-item input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid #333;
+    border-radius: 3px;
+    background: white;
+    cursor: pointer;
+    position: relative;
+    margin-right: 8px;
+}
+
+.checkbox-item input[type="checkbox"]:checked {
+    background: white;
+    border-color: #333;
+}
+
+.checkbox-item input[type="checkbox"]:checked::after {
+    content: "✕";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #000;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.checkbox-item input[type="checkbox"]:hover {
+    border-color: #666;
+}
 
         /* 🔥 ОСНОВНОЙ ИНТЕРФЕЙС */
         .user-info { 
@@ -152,41 +211,101 @@
             align-items: center;
             gap: 8px;
         }
-        
-        .control-buttons-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
-        
-        .control-button {
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 0.8rem;
-            font-weight: bold;
-            text-align: center;
-        }
-        
-        .admin-btn { 
-            background: #00FF7F; 
-            color: black; 
-        }
-        .admin-btn:hover { background: #00CC66; }
-        
-        .inspector-btn { 
-            background: #3498db; 
-            color: white; 
-        }
-        .inspector-btn:hover { background: #2980b9; }
-        
-        .inspector-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
+
+        /* 🔥 КНОПКИ ФИЛЬТРОВ (оригинальный размер как "Выбрать всех") */
+.control-button, .list-control-button {
+    padding: 8px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: bold;
+    text-align: center;
+    background: #3498db;
+    color: white;
+    transition: all 0.3s ease;
+    flex: 1;
+}
+
+/* 🔥 АДМИНСКИЕ КНОПКИ (такой же стиль, но меньше) */
+.admin-btn, .inspector-btn, .close-day-btn {
+    padding: 6px 8px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-weight: bold;
+    text-align: center;
+    background: #3498db;
+    color: white;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    width: 100%;
+    margin-bottom: 4px;
+}
+
+/* Ховер-эффекты для всех кнопок */
+.control-button:hover, .list-control-button:hover, .admin-btn:hover, .inspector-btn:hover, .close-day-btn:hover {
+    background: #2980b9;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* 🔥 ЦВЕТА ДЛЯ РАЗНЫХ ТИПОВ КНОПОК */
+.admin-btn { 
+    background: #3498db; 
+}
+.admin-btn:hover { 
+    background: #2980b9; 
+}
+
+.inspector-btn { 
+    background: #90EE90; 
+    color: #006400; 
+}
+.inspector-btn:hover { 
+    background: #7CFC00; 
+    color: #006400; 
+}
+
+.close-day-btn { 
+    background: #FFB6C1; 
+    color: #8B0000; 
+}
+.close-day-btn:hover { 
+    background: #FF69B4; 
+    color: #8B0000; 
+}
+
+.close-day-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #FFB6C1;
+    color: #8B0000;
+}
+
+.close-day-btn:disabled:hover {
+    background: #FFB6C1;
+    color: #8B0000;
+    transform: none;
+    box-shadow: none;
+}
+
+/* 🔥 СЕТКА ДЛЯ АДМИНСКИХ КНОПОК */
+.control-buttons-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+/* 🔥 КНОПКИ В ФИЛЬТРАХ */
+.control-buttons, .list-control-buttons {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
         .work-day-indicator {
             padding: 8px;
             border-radius: 5px;
@@ -300,23 +419,23 @@
 
         /* 🔥 СТИЛИ УПРАВЛЕНИЯ ИНСПЕКТОРАМИ */
         .filter-access-menu, .inspector-management-menu { 
-            position: fixed; 
-            top: 50%; 
-            left: 50%; 
-            transform: translate(-50%, -50%); 
-            background: white; 
-            padding: 15px; 
-            border-radius: 10px; 
-            box-shadow: 0 5px 30px rgba(0,0,0,0.3); 
-            z-index: 10000; 
-            display: none; 
-            flex-direction: column; 
-            gap: 12px; 
-            width: 95%; 
-            max-width: 500px; 
-            max-height: 90vh; 
-            overflow-y: auto; 
-        }
+    position: fixed; 
+    top: 280px; /* 🔥 ФИКСИРОВАННОЕ ЗНАЧЕНИЕ В PX */
+    left: 50%; 
+    transform: translateX(-50%); /* 🔥 УБИРАЕМ translateY */
+    background: white; 
+    padding: 15px; 
+    border-radius: 10px; 
+    box-shadow: 0 5px 30px rgba(0,0,0,0.3); 
+    z-index: 10000; 
+    display: none; 
+    flex-direction: column; 
+    gap: 12px; 
+    width: 95%; 
+    max-width: 500px; 
+    max-height: 70vh; 
+    overflow-y: auto; 
+}
 
         .filter-access-title { font-weight: bold; color: #333; margin-bottom: 8px; text-align: center; font-size: 1rem; }
         .filter-access-section { margin-bottom: 12px; }
@@ -384,10 +503,10 @@
         .icon-select, .status-select { width: 100%; padding: 6px; border: 2px solid #3498db; border-radius: 4px; margin-top: 5px; font-size: 0.85rem; }
 
         /* 🔥 МОБИЛЬНЫЙ РЕЖИМ - КНОПКА ПАНЕЛИ УПРАВЛЕНИЯ */
-        .mobile-toggle-btn {
-    position: absolute;
-    top: 80px;  /* 🔥 ПАНЕЛЬ НИЖЕ - было 40px */
-    right: 10px; 
+      .mobile-toggle-btn {
+    position: fixed;
+    top: 100px;  
+    right: 25px; 
     background: #3498db;
     color: white;
     border: none;
@@ -400,11 +519,15 @@
     display: none;
 }
 
-/* 🔥 ПОДНИМАЕМ БЛОК ПОЛЬЗОВАТЕЛЯ ВЫШЕ */
+.mobile-toggle-btn:hover {
+    background: #2980b9;
+}
+
+/* 🔥 БЛОК ПОЛЬЗОВАТЕЛЯ */
 .user-info { 
-    position: absolute; 
-    top: 40px; /* 🔥 ВЫХОД ВЫШЕ - было 80px */
-    right: 10px; 
+    position: fixed; 
+    top: 60px; 
+    right: 30px; 
     background: white; 
     padding: 8px 12px; 
     border-radius: 8px; 
@@ -598,8 +721,8 @@
             <div class="control-section" id="workDaySection" style="display: none;">
                 <div class="control-section-title">📅 Управление рабочим днем</div>
                 <div class="control-buttons-grid">
-                    <button class="inspector-btn" id="openDayBtn" onclick="startWorkDay()">🟢 Открыть день</button>
-                    <button class="inspector-btn" id="closeDayBtn" onclick="endWorkDay()" disabled>🔴 Закрыть день</button>
+                   <button class="inspector-btn" id="openDayBtn" onclick="startWorkDay()">🟢 Открыть день</button>
+<button class="inspector-btn close-day-btn" id="closeDayBtn" onclick="endWorkDay()" disabled>🔴 Закрыть день</button>
                 </div>
                 <div class="work-day-indicator closed" id="workDayIndicator">Статус: День закрыт</div>
             </div>
@@ -655,7 +778,7 @@
                         <div class="filter-title">⚙️ Настройки отображения</div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="showHidden" onchange="updateFilters()">
-                            <label for="showHidden">✅ Показать ВЫПОЛНЕННЫЕ объекты</label>
+                            <label for="showHidden"> МОНИТОРИНГ ЗАВЕРШЕН ✅ </label>
                         </div>
                     </div>
 
@@ -1189,21 +1312,26 @@
             document.head.appendChild(script);
         }
 
-        function processServerData(data) {
-            objectsData = data.points;
-            window.INSPECTORS_CONFIG = data.inspectorsConfig || {};
-            window.INSPECTOR_HOMES = data.inspectorsHomes || {};
-            availableIcons = data.availableIcons || {};
-            availableColors = data.availableColors || [];
-            filterAccessSettings = data.filterAccessSettings || {};
-            
-            console.log('✅ Загружено объектов:', objectsData.length);
-            console.log('✅ Конфигурация инспекторов:', Object.keys(window.INSPECTORS_CONFIG).length);
-            
-            initInterface();
-            updateMap();
-            updateObjectsList();
-        }
+       function processServerData(data) {
+    // 🔥 ПРЕОБРАЗУЕМ ВСЕ ID В СТРОКИ - РЕШАЕМ ПРОБЛЕМУ С "001", "002A" и т.д.
+    objectsData = data.points.map(obj => ({
+        ...obj,
+        id: obj.id.toString() // Приводим все ID к строковому типу
+    }));
+    
+    window.INSPECTORS_CONFIG = data.inspectorsConfig || {};
+    window.INSPECTOR_HOMES = data.inspectorsHomes || {};
+    availableIcons = data.availableIcons || {};
+    availableColors = data.availableColors || [];
+    filterAccessSettings = data.filterAccessSettings || {};
+    
+    console.log('✅ Загружено объектов:', objectsData.length);
+    console.log('✅ Конфигурация инспекторов:', Object.keys(window.INSPECTORS_CONFIG).length);
+    
+    initInterface();
+    updateMap();
+    updateObjectsList();
+}
 
         function forceRefreshData() {
             loadData();
@@ -1211,29 +1339,35 @@
 
         // 🔥 ФУНКЦИЯ ДЛЯ СЧЕТЧИКОВ СПИСКОВ
         function calculateListStats() {
-            const stats = {};
-            
-            objectsData.forEach(obj => {
-                if (!stats[obj.list]) {
-                    stats[obj.list] = {
-                        total: 0,
-                        completed: 0,
-                        active: 0
-                    };
-                }
-                
-                stats[obj.list].total++;
-                
-                if (obj.exitTime && obj.exitTime !== '') {
-                    stats[obj.list].completed++;
-                }
-                if (obj.entryTime && !obj.exitTime) {
-                    stats[obj.list].active++;
-                }
-            });
-            
-            return stats;
+    const stats = {};
+    const selectedInspectors = getSelectedInspectors(); // 🔥 Получаем выбранных инспекторов
+    
+    objectsData.forEach(obj => {
+        // 🔥 УЧИТЫВАЕМ ТОЛЬКО ОБЪЕКТЫ ВЫБРАННЫХ ИНСПЕКТОРОВ
+        if (selectedInspectors.length > 0 && !selectedInspectors.includes(obj.inspector)) {
+            return; // Пропускаем объекты невыбранных инспекторов
         }
+        
+        if (!stats[obj.list]) {
+            stats[obj.list] = {
+                total: 0,
+                completed: 0,
+                active: 0
+            };
+        }
+        
+        stats[obj.list].total++;
+        
+        if (obj.exitTime && obj.exitTime !== '') {
+            stats[obj.list].completed++;
+        }
+        if (obj.entryTime && !obj.exitTime) {
+            stats[obj.list].active++;
+        }
+    });
+    
+    return stats;
+}
 
         function initInterface() {
             console.log('🟡 ========== НАЧАЛО ИНИЦИАЛИЗАЦИИ ИНТЕРФЕЙСА ==========');
@@ -1245,9 +1379,15 @@
             const inspectorsList = document.getElementById('inspectorsList');
             inspectorsList.innerHTML = '';
             
-            const allSystemInspectors = Object.keys(window.INSPECTORS_CONFIG || {}).filter(inspector => 
-                inspector !== 'Admin' && inspector !== 'Юсупов Артур Русланович'
-            );
+            // 🔥 ВКЛЮЧАЕМ ADMIN ТОЛЬКО ДЛЯ ИМПЕРАТОРА
+let allSystemInspectors = Object.keys(window.INSPECTORS_CONFIG || {}).filter(inspector => 
+    inspector !== 'Юсупов Артур Русланович'
+);
+
+// 🔥 ЕСЛИ ПОЛЬЗОВАТЕЛЬ НЕ ИМПЕРАТОР - ИСКЛЮЧАЕМ ADMIN ИЗ ФИЛЬТРОВ
+if (userAccessRights !== 'Император') {
+    allSystemInspectors = allSystemInspectors.filter(inspector => inspector !== 'Admin');
+}
             
             allSystemInspectors.forEach(inspector => {
                 const style = getInspectorStyle(inspector);
@@ -1411,6 +1551,24 @@
                 }
             });
         }
+
+// 🔥 ДОБАВЛЯЕМ ФУНКЦИЮ ОБНОВЛЕНИЯ СЧЕТЧИКОВ СПИСКОВ
+function updateListCounters() {
+    const listStats = calculateListStats(); // 🔥 Теперь учитывает выбранных инспекторов
+    const listCheckboxes = document.querySelectorAll('#listsList input[type="checkbox"]');
+    
+    listCheckboxes.forEach(checkbox => {
+        const list = checkbox.id.replace('list_', '');
+        const stats = listStats[list] || { total: 0, completed: 0, active: 0 };
+        const counterElement = checkbox.parentNode.querySelector('.list-counter');
+        
+        if (counterElement) {
+            counterElement.textContent = `(${stats.completed}/${stats.total})`;
+        }
+    });
+}
+
+
 
         // 🔥 ФИЛЬТРАЦИЯ И КАРТА
         function getSelectedInspectors() {
@@ -1921,7 +2079,7 @@
 
         // 🔥 РАБОТА С ТОЧКАМИ - УЛУЧШЕННАЯ ВЕРСИЯ
         function markEntry(objectId) {
-            const object = objectsData.find(obj => obj.id == objectId);
+            const object = objectsData.find(obj => obj.id === objectId);
             if (!object) {
                 showNotification('❌ Объект не найден', 'error');
                 return;
@@ -2037,7 +2195,7 @@
                     showNotification(`✅ Выход отмечен и точка ${objectId} выполнена`, 'success');
                     
                     // 🔥 МГНОВЕННОЕ ОБНОВЛЕНИЕ КАРТЫ И ДАННЫХ
-                    const object = objectsData.find(obj => obj.id == objectId);
+                    const object = objectsData.find(obj => obj.id === objectId);
                     if (object) {
                         object.exitTime = new Date().toISOString();
                         updateSinglePointOnMap(objectId, 'completed');
@@ -2073,7 +2231,7 @@
                 return;
             }
             
-            const object = objectsData.find(obj => obj.id == objectId);
+            const object = objectsData.find(obj => obj.id === objectId);
             if (!object) {
                 showNotification('❌ Объект не найден', 'error');
                 return;
@@ -2156,7 +2314,7 @@
                     showNotification(`✅ Точка ${objectId} переназначена ${newInspector}`, 'success');
                     
                     // 🔥 МГНОВЕННОЕ ОБНОВЛЕНИЕ КАРТЫ
-                    const object = objectsData.find(obj => obj.id == objectId);
+                    const object = objectsData.find(obj => obj.id === objectId);
                     if (object) {
                         object.inspector = newInspector;
                         const isActive = object.entryTime && !object.exitTime;
@@ -2243,36 +2401,41 @@
             cleanupCallback();
         }
 
-        function updateWorkDayButtons() {
-            const openBtn = document.getElementById('openDayBtn');
-            const closeBtn = document.getElementById('closeDayBtn');
-            const indicator = document.getElementById('workDayIndicator');
-            
-            if (isWorkDayOpen) {
-                openBtn.disabled = true;
-                closeBtn.disabled = false;
-                
-                const localStatus = getWorkDayStatus();
-                let statusText = 'Статус: День открыт';
-                
-                if (localStatus.startTime) {
-                    const startDate = new Date(localStatus.startTime);
-                    const timeString = startDate.toLocaleTimeString('ru-RU', { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                    });
-                    statusText = `Статус: День открыт (с ${timeString})`;
-                }
-                
-                indicator.textContent = statusText;
-                indicator.className = 'work-day-indicator open';
-            } else {
-                openBtn.disabled = false;
-                closeBtn.disabled = true;
-                indicator.textContent = 'Статус: День закрыт';
-                indicator.className = 'work-day-indicator closed';
-            }
+       function updateWorkDayButtons() {
+    const openBtn = document.getElementById('openDayBtn');
+    const closeBtn = document.getElementById('closeDayBtn');
+    const indicator = document.getElementById('workDayIndicator');
+    
+    if (!openBtn || !closeBtn || !indicator) return;
+    
+    if (isWorkDayOpen) {
+        // 🔵 День открыт
+        openBtn.disabled = true;
+        closeBtn.disabled = false;
+        
+        const localStatus = getWorkDayStatus();
+        let statusText = 'Статус: День открыт';
+        
+        if (localStatus.startTime) {
+            const startDate = new Date(localStatus.startTime);
+            const timeString = startDate.toLocaleTimeString('ru-RU', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
+            statusText = `Статус: День открыт (с ${timeString})`;
         }
+        
+        indicator.textContent = statusText;
+        indicator.className = 'work-day-indicator open';
+        
+    } else {
+        // 🔴 День закрыт
+        openBtn.disabled = false;
+        closeBtn.disabled = true;
+        indicator.textContent = 'Статус: День закрыт';
+        indicator.className = 'work-day-indicator closed';
+    }
+}
 
         function startWorkDay() {
             if (userAccessRights === 'Император' || userAccessRights === 'Администратор') {
@@ -2987,9 +3150,10 @@
             updateFilters();
         }
 
-        function onInspectorChange() {
-            updateFilters();
-        }
+       function onInspectorChange() {
+    updateFilters();
+    updateListCounters(); // 🔥 ДОБАВИТЬ ЭТУ СТРОЧКУ
+}
 
         function onListChange() {
             updateFilters();
