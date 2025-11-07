@@ -1786,14 +1786,19 @@ function updateListCounters() {
 
         // 🔥 УЛУЧШЕННОЕ ТОЧЕЧНОЕ ОБНОВЛЕНИЕ КАРТЫ - ИСПРАВЛЕННАЯ ВЕРСИЯ
         function updateSinglePointOnMap(objectId, newStatus) {
-            const object = objectsData.find(obj => obj.id == objectId);
-            if (!object) return;
+             const objectIdStr = objectId.toString();
+    const object = objectsData.find(obj => obj.id === objectIdStr);
+    
+    if (!object) {
+        console.error('❌ Объект не найден для обновления:', objectId, 'тип:', typeof objectId, 'ищем:', objectIdStr);
+        return;
+    }
 
-            console.log(`🔄 Точечное обновление точки ${objectId} -> ${newStatus}`);
+    console.log(`🔄 Точечное обновление точки ${objectIdStr} -> ${newStatus}`);
 
-            // 🔥 УДАЛЯЕМ ИЗ ВСЕХ СЛОЕВ СРАЗУ
-            objectManager.remove(objectId);
-            activeObjectsLayer.remove(objectId);
+    // 🔥 УДАЛЯЕМ ИЗ ВСЕХ СЛОЕВ СРАЗУ
+    objectManager.remove(objectIdStr);
+    activeObjectsLayer.remove(objectIdStr);
 
             const style = getInspectorStyle(object.inspector);
             let feature;
@@ -1894,15 +1899,17 @@ function updateListCounters() {
         }
 
         function showObjectBalloon(objectId) {
-            const object = objectManager.objects.getById(objectId) || activeObjectsLayer.objects.getById(objectId);
-            if (object) {
-                if (objectManager.objects.getById(objectId)) {
-                    objectManager.objects.balloon.open(objectId);
-                } else {
-                    activeObjectsLayer.objects.balloon.open(objectId);
-                }
-            }
+            const objectIdStr = objectId.toString();
+    const object = objectManager.objects.getById(objectIdStr) || activeObjectsLayer.objects.getById(objectIdStr);
+    
+    if (object) {
+        if (objectManager.objects.getById(objectIdStr)) {
+            objectManager.objects.balloon.open(objectIdStr);
+        } else {
+            activeObjectsLayer.objects.balloon.open(objectIdStr);
         }
+    }
+}
 
         function getBalloonContent(obj, icon) {
             const isNew = !obj.entryTime && !obj.exitTime;
@@ -2079,11 +2086,14 @@ function updateListCounters() {
 
         // 🔥 РАБОТА С ТОЧКАМИ - УЛУЧШЕННАЯ ВЕРСИЯ
         function markEntry(objectId) {
-            const object = objectsData.find(obj => obj.id === objectId);
-            if (!object) {
-                showNotification('❌ Объект не найден', 'error');
-                return;
-            }
+             const objectIdStr = objectId.toString();
+    const object = objectsData.find(obj => obj.id === objectIdStr);
+    
+    if (!object) {
+        console.error('❌ Объект не найден:', objectId, 'тип:', typeof objectId, 'ищем:', objectIdStr);
+        showNotification('❌ Объект не найден', 'error');
+        return;
+    }
             
             const canMarkEntryExit = (userAccessRights === 'Император' || userAccessRights === 'Администратор') || 
                                    isSameInspector(object.inspector, currentUser);
@@ -2114,11 +2124,14 @@ function updateListCounters() {
         }
 
         function markExit(objectId) {
-            const object = objectsData.find(obj => obj.id == objectId);
-            if (!object) {
-                showNotification('❌ Объект не найден', 'error');
-                return;
-            }
+            const objectIdStr = objectId.toString();
+    const object = objectsData.find(obj => obj.id === objectIdStr);
+    
+    if (!object) {
+        console.error('❌ Объект не найден:', objectId, 'тип:', typeof objectId, 'ищем:', objectIdStr);
+        showNotification('❌ Объект не найден', 'error');
+        return;
+    }
             
             const canMarkEntryExit = (userAccessRights === 'Император' || userAccessRights === 'Администратор') || 
                                    isSameInspector(object.inspector, currentUser);
@@ -2131,134 +2144,144 @@ function updateListCounters() {
             performMarkExit(objectId);
         }
 
-        function performMarkEntry(objectId) {
-            showNotification('🔄 Отмечаем вход...', 'success');
+       function performMarkEntry(objectId) {
+    showNotification('🔄 Отмечаем вход...', 'success');
+    
+    // 🔥 ПРЕОБРАЗУЕМ ID В СТРОКУ ДЛЯ ПОИСКА
+    const objectIdStr = objectId.toString();
+    
+    const callbackName = 'entryCallback_' + Date.now();
+    
+    const cleanupCallback = function() {
+        setTimeout(() => {
+            if (window[callbackName]) {
+                delete window[callbackName];
+            }
+        }, 10000);
+    };
+    
+    window[callbackName] = function(result) {
+        cleanupCallback();
+        if (result.success && result.updated) {
+            showNotification(`✅ Вход отмечен для точки ${objectId}`, 'success');
             
-            const callbackName = 'entryCallback_' + Date.now();
+            // 🔥 МГНОВЕННОЕ ОБНОВЛЕНИЕ КАРТЫ И ДАННЫХ
+            const object = objectsData.find(obj => obj.id === objectIdStr);
+            if (object) {
+                object.entryTime = new Date().toISOString();
+                updateSinglePointOnMap(objectId, 'active');
+            }
             
-            const cleanupCallback = function() {
-                setTimeout(() => {
-                    if (window[callbackName]) {
-                        delete window[callbackName];
-                    }
-                }, 10000);
-            };
-            
-            window[callbackName] = function(result) {
-                cleanupCallback();
-                if (result.success && result.updated) {
-                    showNotification(`✅ Вход отмечен для точки ${objectId}`, 'success');
-                    
-                    // 🔥 МГНОВЕННОЕ ОБНОВЛЕНИЕ КАРТЫ И ДАННЫХ
-                    const object = objectsData.find(obj => obj.id == objectId);
-                    if (object) {
-                        object.entryTime = new Date().toISOString();
-                        updateSinglePointOnMap(objectId, 'active');
-                    }
-                    
-                    // Обновляем данные в фоне
-                    setTimeout(() => loadData(), 2000);
-                } else {
-                    showNotification('❌ Ошибка: ' + (result.message || 'Не удалось отметить вход'), 'error');
-                }
-            };
-            
-            const url = `${SCRIPT_URL}?action=entry&objectId=${objectId}&callback=${callbackName}`;
-            const script = document.createElement('script');
-            script.src = url;
-            script.onerror = function() {
-                cleanupCallback();
-                showNotification('❌ Ошибка соединения с сервером', 'error');
-            };
-            document.head.appendChild(script);
-            cleanupCallback();
+            // Обновляем данные в фоне
+            setTimeout(() => loadData(), 2000);
+        } else {
+            showNotification('❌ Ошибка: ' + (result.message || 'Не удалось отметить вход'), 'error');
         }
+    };
+    
+    const url = `${SCRIPT_URL}?action=entry&objectId=${objectId}&callback=${callbackName}`;
+    const script = document.createElement('script');
+    script.src = url;
+    script.onerror = function() {
+        cleanupCallback();
+        showNotification('❌ Ошибка соединения с сервером', 'error');
+    };
+    document.head.appendChild(script);
+    cleanupCallback();
+}
 
-        function performMarkExit(objectId) {
-            showNotification('🔄 Отмечаем выход...', 'success');
+                function performMarkExit(objectId) {
+    showNotification('🔄 Отмечаем выход...', 'success');
+    
+    // 🔥 ПРЕОБРАЗУЕМ ID В СТРОКУ ДЛЯ ПОИСКА
+    const objectIdStr = objectId.toString();
+    
+    const callbackName = 'exitCallback_' + Date.now();
+    
+    const cleanupCallback = function() {
+        setTimeout(() => {
+            if (window[callbackName]) {
+                delete window[callbackName];
+            }
+        }, 15000);
+    };
+    
+    window[callbackName] = function(result) {
+        cleanupCallback();
+        console.log('🟡 Ответ от сервера при выходе:', result);
+        
+        if (result.success && result.updated) {
+            showNotification(`✅ Выход отмечен и точка ${objectId} выполнена`, 'success');
             
-            const callbackName = 'exitCallback_' + Date.now();
+            // 🔥 МГНОВЕННОЕ ОБНОВЛЕНИЕ КАРТЫ И ДАННЫХ
+            const object = objectsData.find(obj => obj.id === objectIdStr);
+            if (object) {
+                object.exitTime = new Date().toISOString();
+                updateSinglePointOnMap(objectId, 'completed');
+            }
             
-            const cleanupCallback = function() {
-                setTimeout(() => {
-                    if (window[callbackName]) {
-                        delete window[callbackName];
-                    }
-                }, 15000);
-            };
+            // Обновляем данные в фоне
+            setTimeout(() => loadData(), 2000);
             
-            window[callbackName] = function(result) {
-                cleanupCallback();
-                console.log('🟡 Ответ от сервера при выходе:', result);
-                
-                if (result.success && result.updated) {
-                    showNotification(`✅ Выход отмечен и точка ${objectId} выполнена`, 'success');
-                    
-                    // 🔥 МГНОВЕННОЕ ОБНОВЛЕНИЕ КАРТЫ И ДАННЫХ
-                    const object = objectsData.find(obj => obj.id === objectId);
-                    if (object) {
-                        object.exitTime = new Date().toISOString();
-                        updateSinglePointOnMap(objectId, 'completed');
-                    }
-                    
-                    // Обновляем данные в фоне
-                    setTimeout(() => loadData(), 2000);
-                    
-                } else {
-                    showNotification('❌ Ошибка: ' + (result.message || 'Не удалось отметить выход'), 'error');
-                    console.error('❌ Ошибка при выходе:', result);
-                }
-            };
-            
-            const timestamp = Date.now();
-            const random = Math.random().toString(36).substring(7);
-            const url = `${SCRIPT_URL}?action=exit&objectId=${objectId}&_=${timestamp}&r=${random}&callback=${callbackName}`;
-            
-            console.log('🟡 Отправляем запрос на выход:', url);
-            const script = document.createElement('script');
-            script.src = url;
-            script.onerror = function() {
-                cleanupCallback();
-                showNotification('❌ Ошибка соединения с сервером', 'error');
-            };
-            document.head.appendChild(script);
-            cleanupCallback();
+        } else {
+            showNotification('❌ Ошибка: ' + (result.message || 'Не удалось отметить выход'), 'error');
+            console.error('❌ Ошибка при выходе:', result);
         }
+    };
+    
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(7);
+    const url = `${SCRIPT_URL}?action=exit&objectId=${objectId}&_=${timestamp}&r=${random}&callback=${callbackName}`;
+    
+    console.log('🟡 Отправляем запрос на выход:', url);
+    const script = document.createElement('script');
+    script.src = url;
+    script.onerror = function() {
+        cleanupCallback();
+        showNotification('❌ Ошибка соединения с сервером', 'error');
+    };
+    document.head.appendChild(script);
+    cleanupCallback();
+}
 
-        function cancelEntry(objectId) {
-            if (!(userAccessRights === 'Император' || userAccessRights === 'Администратор')) {
-                showNotification('❌ Только администратор может отменять вход', 'error');
-                return;
+       function cancelEntry(objectId) {
+    if (!(userAccessRights === 'Император' || userAccessRights === 'Администратор')) {
+        showNotification('❌ Только администратор может отменять вход', 'error');
+        return;
+    }
+    
+    // 🔥 ПРЕОБРАЗУЕМ ID В СТРОКУ ДЛЯ ПОИСКА
+    const objectIdStr = objectId.toString();
+    const object = objectsData.find(obj => obj.id === objectIdStr);
+    
+    if (!object) {
+        console.error('❌ Объект не найден:', objectId, 'тип:', typeof objectId, 'ищем:', objectIdStr);
+        showNotification('❌ Объект не найден', 'error');
+        return;
+    }
+    
+    if (!object.entryTime || object.exitTime) {
+        showNotification('❌ Объект не находится в активном статусе', 'error');
+        return;
+    }
+    
+    if (!confirm(`Отменить вход на объект ${objectId}? Объект вернется в статус "Новая".`)) {
+        return;
+    }
+    
+    showNotification('🔄 Отменяем вход...', 'success');
+    
+    const callbackName = 'cancelEntryCallback_' + Date.now();
+    
+    const cleanupCallback = function() {
+        setTimeout(() => {
+            if (window[callbackName]) {
+                delete window[callbackName];
             }
-            
-            const object = objectsData.find(obj => obj.id === objectId);
-            if (!object) {
-                showNotification('❌ Объект не найден', 'error');
-                return;
-            }
-            
-            if (!object.entryTime || object.exitTime) {
-                showNotification('❌ Объект не находится в активном статусе', 'error');
-                return;
-            }
-            
-            if (!confirm(`Отменить вход на объект ${objectId}? Объект вернется в статус "Новая".`)) {
-                return;
-            }
-            
-            showNotification('🔄 Отменяем вход...', 'success');
-            
-            const callbackName = 'cancelEntryCallback_' + Date.now();
-            
-            const cleanupCallback = function() {
-                setTimeout(() => {
-                    if (window[callbackName]) {
-                        delete window[callbackName];
-                    }
-                }, 10000);
-            };
-            
-            window[callbackName] = function(result) {
+        }, 10000);
+    };
+    
+    window[callbackName] = function(result) {
                 cleanupCallback();
                 if (result.success && result.updated) {
                     showNotification(`✅ Вход отменен для точки ${objectId}`, 'success');
@@ -2288,11 +2311,14 @@ function updateListCounters() {
         }
 
         // 🔥 ПЕРЕРАСПРЕДЕЛЕНИЕ ИНСПЕКТОРА - УЛУЧШЕННАЯ ВЕРСИЯ
-        function reassignInspector(objectId, newInspector) {
-            if (!(userAccessRights === 'Император' || userAccessRights === 'Администратор')) return;
-            if (!newInspector) return;
-            
-            console.log('🟡 Переназначение:', objectId, '→', newInspector);
+       function reassignInspector(objectId, newInspector) {
+    if (!(userAccessRights === 'Император' || userAccessRights === 'Администратор')) return;
+    if (!newInspector) return;
+    
+    // 🔥 ПРЕОБРАЗУЕМ ID В СТРОКУ ДЛЯ ПОИСКА
+    const objectIdStr = objectId.toString();
+    
+    console.log('🟡 Переназначение:', objectIdStr, '→', newInspector);
             
             // 🔥 ЗАКРЫВАЕМ БАЛЛУН ПЕРЕД ВЫПОЛНЕНИЕМ ДЕЙСТВИЯ
             objectManager.objects.balloon.close();
