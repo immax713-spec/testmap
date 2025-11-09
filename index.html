@@ -755,9 +755,9 @@
                         <div class="filter-title">👤 Фильтр по инспекторам</div>
                         <input type="text" id="searchInspectors" class="search-box" placeholder="🔍 Поиск по инспекторам..." onkeyup="filterInspectorsList()">
                         <div class="control-buttons">
-                            <button class="control-button" onclick="selectAllInspectors()">Выбрать всех</button>
-                            <button class="control-button" onclick="deselectAllInspectors()">Сбросить всех</button>
-                        </div>
+    <button class="control-button" onclick="selectAllInspectors(); saveFilterState();">Выбрать всех</button>
+    <button class="control-button" onclick="deselectAllInspectors(); saveFilterState();">Сбросить всех</button>
+</div>
                         <div class="checkbox-group" id="inspectorsList">
                             <div class="loading">Загрузка инспекторов...</div>
                         </div>
@@ -766,9 +766,9 @@
                     <div class="filter-section">
                         <div class="filter-title">📋 Фильтр по спискам</div>
                         <div class="list-control-buttons">
-                            <button class="list-control-button" onclick="selectAllLists()">Выбрать все</button>
-                            <button class="list-control-button" onclick="deselectAllLists()">Сбросить все</button>
-                        </div>
+    <button class="list-control-button" onclick="selectAllLists(); saveFilterState();">Выбрать все</button>
+    <button class="list-control-button" onclick="deselectAllLists(); saveFilterState();">Сбросить все</button>
+</div>
                         <div class="checkbox-group" id="listsList">
                             <div class="loading">Загрузка списков...</div>
                         </div>
@@ -777,7 +777,7 @@
                     <div class="filter-section">
                         <div class="filter-title">⚙️ Настройки отображения</div>
                         <div class="checkbox-item">
-                            <input type="checkbox" id="showHidden" onchange="updateFilters()">
+                            <input type="checkbox" id="showHidden" onchange="updateFilters(); saveFilterState();">
                             <label for="showHidden"> МОНИТОРИНГ ЗАВЕРШЕН ✅ </label>
                         </div>
                     </div>
@@ -818,29 +818,103 @@
         const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxMX_q9XfVx1XsJvySUGAXiLbNYBfFqdTJIQuQjPtZ5s1yLh3xdp3W5MnjBLn7fCElBwg/exec';
         
         // 🔥 КЛЮЧИ ДЛЯ LOCALSTORAGE
-        const SESSION_KEY = 'map_session';
-        const REMEMBER_ME_KEY = 'remember_password';
-        const SAVED_PASSWORDS_KEY = 'saved_passwords';
-        const WORK_DAY_STATUS_KEY = 'work_day_status';
-        const WORK_DAY_START_TIME_KEY = 'work_day_start_time';
-        const INSPECTORS_CACHE_KEY = 'inspectors_cache';
-        const INSPECTORS_CACHE_TIMESTAMP = 'inspectors_cache_timestamp';
-        
+const SESSION_KEY = 'map_session';
+const REMEMBER_ME_KEY = 'remember_password';
+const SAVED_PASSWORDS_KEY = 'saved_passwords';
+const WORK_DAY_STATUS_KEY = 'work_day_status';
+const WORK_DAY_START_TIME_KEY = 'work_day_start_time';
+const INSPECTORS_CACHE_KEY = 'inspectors_cache';
+const INSPECTORS_CACHE_TIMESTAMP = 'inspectors_cache_timestamp';
+const FILTERS_STATE_KEY = 'filters_state'; // <-- ЭТО НОВЫЙ КЛЮЧ
+
         // 🔥 НАСТРОЙКИ СЕССИИ
         const SESSION_TIMEOUT = 24 * 60 * 60 * 1000; // 24 часа
 
         // 🔥 ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ
-        let currentUser = null;
-        let userAccessRights = 'Инспектор';
-        let objectsData = [];
-        let map, objectManager, activeObjectsLayer, inspectorsHomesLayer;
-        let showInspectorsHomes = false;
-        let isWorkDayOpen = false;
-        let availableIcons = {};
-        let availableColors = [];
-        let filterAccessSettings = {};
-        let activeMenu = null;
-        let isSidebarCollapsed = false;
+let currentUser = null;
+let userAccessRights = 'Инспектор';
+let objectsData = [];
+let map, objectManager, activeObjectsLayer, inspectorsHomesLayer;
+let showInspectorsHomes = false;
+let isWorkDayOpen = false;
+let availableIcons = {};
+let availableColors = [];
+let filterAccessSettings = {};
+let activeMenu = null;
+let isSidebarCollapsed = false;
+
+// 🔥 СОХРАНЕНИЕ СОСТОЯНИЯ ФИЛЬТРОВ
+function saveFilterState() {
+    try {
+        const filterState = {
+            inspectors: getSelectedInspectors(),
+            lists: getSelectedLists(),
+            showHidden: document.getElementById('showHidden').checked,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(FILTERS_STATE_KEY, JSON.stringify(filterState));
+        console.log('✅ Состояние фильтров сохранено');
+    } catch (error) {
+        console.error('❌ Ошибка сохранения фильтров:', error);
+    }
+}
+
+// 🔥 ЗАГРУЗКА СОСТОЯНИЯ ФИЛЬТРОВ
+function loadFilterState() {
+    try {
+        const saved = localStorage.getItem(FILTERS_STATE_KEY);
+        if (saved) {
+            const filterState = JSON.parse(saved);
+            
+            // 🔥 ВОССТАНАВЛИВАЕМ ИНСПЕКТОРОВ
+            const inspectorCheckboxes = document.querySelectorAll('#inspectorsList input[type="checkbox"]');
+            inspectorCheckboxes.forEach(checkbox => {
+                const inspector = checkbox.id.replace('insp_', '');
+                checkbox.checked = filterState.inspectors.includes(inspector);
+            });
+            
+            // 🔥 ВОССТАНАВЛИВАЕМ СПИСКИ
+            const listCheckboxes = document.querySelectorAll('#listsList input[type="checkbox"]');
+            listCheckboxes.forEach(checkbox => {
+                const list = checkbox.id.replace('list_', '');
+                checkbox.checked = filterState.lists.includes(list);
+            });
+            
+            // 🔥 ВОССТАНАВЛИВАЕМ ЧЕКБОКС "МОНИТОРИНГ"
+            document.getElementById('showHidden').checked = filterState.showHidden;
+            
+            console.log('✅ Состояние фильтров восстановлено');
+            return true;
+        }
+    } catch (error) {
+        console.error('❌ Ошибка загрузки фильтров:', error);
+    }
+    return false;
+}
+
+// 🔥 СБРОС ФИЛЬТРОВ К СОСТОЯНИЮ "ПО УМОЛЧАНИЮ"
+function resetFiltersToDefault() {
+    // 🔥 ВЫБИРАЕМ ВСЕХ ИНСПЕКТОРОВ (кроме неактивных)
+    const inspectorCheckboxes = document.querySelectorAll('#inspectorsList input[type="checkbox"]');
+    inspectorCheckboxes.forEach(checkbox => {
+        const inspector = checkbox.id.replace('insp_', '');
+        const style = getInspectorStyle(inspector);
+        checkbox.checked = style.status === 'active'; // только активных
+    });
+    
+    // 🔥 ВЫБИРАЕМ ВСЕ СПИСКИ
+    const listCheckboxes = document.querySelectorAll('#listsList input[type="checkbox"]');
+    listCheckboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+    
+    // 🔥 СБРАСЫВАЕМ ЧЕКБОКС "МОНИТОРИНГ"
+    document.getElementById('showHidden').checked = false;
+    
+    console.log('✅ Фильтры сброшены к состоянию по умолчанию');
+    saveFilterState();
+    updateFilters();
+}
 
         // 🔥 ИНИЦИАЛИЗАЦИЯ ПРИ ЗАГРУЗКЕ
         document.addEventListener('DOMContentLoaded', function() {
@@ -1313,11 +1387,8 @@
         }
 
        function processServerData(data) {
-    // 🔥 ПРЕОБРАЗУЕМ ВСЕ ID В СТРОКИ - РЕШАЕМ ПРОБЛЕМУ С "001", "002A" и т.д.
-    objectsData = data.points.map(obj => ({
-        ...obj,
-        id: obj.id.toString() // Приводим все ID к строковому типу
-    }));
+    // 🔥 ВОЗВРАЩАЕМ ОРИГИНАЛЬНЫЕ ID (без преобразования в строки!)
+    objectsData = data.points;
     
     window.INSPECTORS_CONFIG = data.inspectorsConfig || {};
     window.INSPECTOR_HOMES = data.inspectorsHomes || {};
@@ -1370,76 +1441,82 @@
 }
 
         function initInterface() {
-            console.log('🟡 ========== НАЧАЛО ИНИЦИАЛИЗАЦИИ ИНТЕРФЕЙСА ==========');
-            
-            const uniqueLists = [...new Set(objectsData.map(obj => obj.list).filter(Boolean))].sort();
-            const inspectorStats = calculateInspectorStats();
-            const listStats = calculateListStats(); // 🔥 СЧЕТЧИКИ ДЛЯ СПИСКОВ
+    console.log('🟡 ========== НАЧАЛО ИНИЦИАЛИЗАЦИИ ИНТЕРФЕЙСА ==========');
+    
+    const uniqueLists = [...new Set(objectsData.map(obj => obj.list).filter(Boolean))].sort();
+    const inspectorStats = calculateInspectorStats();
+    const listStats = calculateListStats();
 
-            const inspectorsList = document.getElementById('inspectorsList');
-            inspectorsList.innerHTML = '';
-            
-            // 🔥 ВКЛЮЧАЕМ ADMIN ТОЛЬКО ДЛЯ ИМПЕРАТОРА
-let allSystemInspectors = Object.keys(window.INSPECTORS_CONFIG || {}).filter(inspector => 
-    inspector !== 'Юсупов Артур Русланович'
-);
+    const inspectorsList = document.getElementById('inspectorsList');
+    inspectorsList.innerHTML = '';
+    
+    // 🔥 ВКЛЮЧАЕМ ADMIN ТОЛЬКО ДЛЯ ИМПЕРАТОРА
+    let allSystemInspectors = Object.keys(window.INSPECTORS_CONFIG || {}).filter(inspector => 
+        inspector !== 'Юсупов Артур Русланович'
+    );
 
-// 🔥 ЕСЛИ ПОЛЬЗОВАТЕЛЬ НЕ ИМПЕРАТОР - ИСКЛЮЧАЕМ ADMIN ИЗ ФИЛЬТРОВ
-if (userAccessRights !== 'Император') {
-    allSystemInspectors = allSystemInspectors.filter(inspector => inspector !== 'Admin');
-}
+    // 🔥 ЕСЛИ ПОЛЬЗОВАТЕЛЬ НЕ ИМПЕРАТОР - ИСКЛЮЧАЕМ ADMIN ИЗ ФИЛЬТРОВ
+    if (userAccessRights !== 'Император') {
+        allSystemInspectors = allSystemInspectors.filter(inspector => inspector !== 'Admin');
+    }
+    
+    allSystemInspectors.forEach(inspector => {
+        const style = getInspectorStyle(inspector);
+        const stats = inspectorStats[inspector] || { total: 0, completed: 0, active: 0 };
+        
+        const hasAccessToObjects = userAccessRights === 'Император' || 
+                                 userAccessRights === 'Администратор' ||
+                                 isSameInspector(inspector, currentUser) ||
+                                 hasFilterAccessToInspector(inspector);
+        
+        if (hasAccessToObjects) {
+            const checkbox = document.createElement('div');
+            checkbox.className = 'checkbox-item';
             
-            allSystemInspectors.forEach(inspector => {
-                const style = getInspectorStyle(inspector);
-                const stats = inspectorStats[inspector] || { total: 0, completed: 0, active: 0 };
-                
-                const hasAccessToObjects = userAccessRights === 'Император' || 
-                                         userAccessRights === 'Администратор' ||
-                                         isSameInspector(inspector, currentUser) ||
-                                         hasFilterAccessToInspector(inspector);
-                
-                if (hasAccessToObjects) {
-                    const checkbox = document.createElement('div');
-                    checkbox.className = 'checkbox-item';
-                    
-                    checkbox.innerHTML = `
-                        <input type="checkbox" id="insp_${inspector}" onchange="onInspectorChange()" 
-                               ${isSameInspector(inspector, currentUser) ? 'checked' : ''}>
-                        <span class="inspector-icon">${style.icon}</span>
-                        <span class="color-dot" style="background-color: ${style.color}"></span>
-                        <label for="insp_${inspector}">
-                            ${inspector}
-                        </label>
-                        <span class="inspector-counter ${inspector === 'Admin' ? 'admin' : ''} 
-                              ${style.status !== 'active' ? 'inactive' : ''}">
-                            ${stats.completed}/${stats.total}
-                        </span>
-                    `;
-                    inspectorsList.appendChild(checkbox);
-                }
-            });
+            checkbox.innerHTML = `
+                <input type="checkbox" id="insp_${inspector}" onchange="onInspectorChange()" 
+                       ${isSameInspector(inspector, currentUser) ? 'checked' : ''}>
+                <span class="inspector-icon">${style.icon}</span>
+                <span class="color-dot" style="background-color: ${style.color}"></span>
+                <label for="insp_${inspector}">
+                    ${inspector}
+                </label>
+                <span class="inspector-counter ${inspector === 'Admin' ? 'admin' : ''} 
+                      ${style.status !== 'active' ? 'inactive' : ''}">
+                    ${stats.completed}/${stats.total}
+                </span>
+            `;
+            inspectorsList.appendChild(checkbox);
+        }
+    });
 
-            const listsList = document.getElementById('listsList');
-            listsList.innerHTML = '';
-            
-            uniqueLists.forEach(list => {
-                const stats = listStats[list] || { total: 0, completed: 0, active: 0 };
-                const checkbox = document.createElement('div');
-                checkbox.className = 'checkbox-item';
-                checkbox.innerHTML = `
-                    <input type="checkbox" id="list_${list}" onchange="onListChange()" checked>
-                    <label for="list_${list}">
-                        ${list} 
-                        <span class="list-counter">(${stats.completed}/${stats.total})</span>
-                    </label>
-                `;
-                listsList.appendChild(checkbox);
-            });
+    const listsList = document.getElementById('listsList');
+    listsList.innerHTML = '';
+    
+    uniqueLists.forEach(list => {
+        const stats = listStats[list] || { total: 0, completed: 0, active: 0 };
+        const checkbox = document.createElement('div');
+        checkbox.className = 'checkbox-item';
+        checkbox.innerHTML = `
+            <input type="checkbox" id="list_${list}" onchange="onListChange()" checked>
+            <label for="list_${list}">
+                ${list} 
+                <span class="list-counter">(${stats.completed}/${stats.total})</span>
+            </label>
+        `;
+        listsList.appendChild(checkbox);
+    });
 
-            setTimeout(() => {
-                updateInspectorCounters();
-                updateFilters();
-            }, 100);
+     setTimeout(() => {
+        updateInspectorCounters();
+        
+        // 🔥 ЗАГРУЗКА СОХРАНЕННЫХ ФИЛЬТРОВ ИЛИ УСТАНОВКА ПО УМОЛЧАНИЮ
+        if (!loadFilterState()) {
+            resetFiltersToDefault(); // если нет сохраненных - ставим по умолчанию
+        }
+        
+        updateFilters();
+    }, 100);
         }
 
         function getInspectorStyle(inspector) {
@@ -1785,131 +1862,124 @@ function updateListCounters() {
         }
 
         // 🔥 УЛУЧШЕННОЕ ТОЧЕЧНОЕ ОБНОВЛЕНИЕ КАРТЫ - ИСПРАВЛЕННАЯ ВЕРСИЯ
-        function updateSinglePointOnMap(objectId, newStatus) {
-             const objectIdStr = objectId.toString();
-    const object = objectsData.find(obj => obj.id === objectIdStr);
-    
-    if (!object) {
-        console.error('❌ Объект не найден для обновления:', objectId, 'тип:', typeof objectId, 'ищем:', objectIdStr);
-        return;
-    }
+function updateSinglePointOnMap(objectId, newStatus) {
+    const object = objectsData.find(obj => obj.id == objectId); // 🔥 ИСПРАВЛЕНО: == вместо ===
+    if (!object) return;
 
-    console.log(`🔄 Точечное обновление точки ${objectIdStr} -> ${newStatus}`);
+    console.log(`🔄 Точечное обновление точки ${objectId} -> ${newStatus}`);
 
     // 🔥 УДАЛЯЕМ ИЗ ВСЕХ СЛОЕВ СРАЗУ
-    objectManager.remove(objectIdStr);
-    activeObjectsLayer.remove(objectIdStr);
+    objectManager.remove(objectId);
+    activeObjectsLayer.remove(objectId);
 
-            const style = getInspectorStyle(object.inspector);
-            let feature;
+    const style = getInspectorStyle(object.inspector);
+    let feature;
 
-            if (newStatus === 'active') {
-                // 🔵 АКТИВНАЯ ТОЧКА - БОЛЬШОЙ КРУЖОК
-                feature = {
-                    type: 'Feature',
-                    id: object.id,
-                    geometry: {
-                        type: 'Point',
-                        coordinates: [parseFloat(object.latitude), parseFloat(object.longitude)]
-                    },
-                    properties: {
-                        hintContent: `🔵 АКТИВНА Точка №${object.id} (${object.list || 'Без списка'})`,
-                        balloonContent: getBalloonContent(object, style.icon),
-                        inspector: object.inspector,
-                        list: object.list,
-                        address: object.address,
-                        checklistLink: object.checklistLink,
-                        yandexDiskLink: object.yandexDiskLink
-                    },
-                    options: {
-                        preset: 'islands#circleIcon',
-                        iconColor: style.color,
-                        iconSize: [50, 50]
-                    }
-                };
-                activeObjectsLayer.add({ type: 'FeatureCollection', features: [feature] });
-                
-            } else if (newStatus === 'completed') {
-                // ✅ ВЫПОЛНЕННАЯ ТОЧКА - МЕДИЦИНСКИЙ КРЕСТИК
-                feature = {
-                    type: 'Feature',
-                    id: object.id,
-                    geometry: {
-                        type: 'Point',
-                        coordinates: [parseFloat(object.latitude), parseFloat(object.longitude)]
-                    },
-                    properties: {
-                        hintContent: `✅ ВЫПОЛНЕНА Точка №${object.id} (${object.list || 'Без списка'})`,
-                        balloonContent: getBalloonContent(object, style.icon),
-                        inspector: object.inspector,
-                        list: object.list,
-                        address: object.address,
-                        checklistLink: object.checklistLink,
-                        yandexDiskLink: object.yandexDiskLink
-                    },
-                    options: {
-                        preset: 'islands#blueMedicalIcon',
-                        iconColor: style.color,
-                        iconSize: [30, 30]
-                    }
-                };
-                objectManager.add({ type: 'FeatureCollection', features: [feature] });
-                
-            } else if (newStatus === 'new') {
-                // 🟡 НОВАЯ ТОЧКА - СТАНДАРТНАЯ МЕТКА
-                const isImperial = object.inspector === 'Admin' || 
-                                 (window.INSPECTORS_CONFIG[object.inspector] && 
-                                  window.INSPECTORS_CONFIG[object.inspector].accessRights === 'Император');
-                const markerType = isImperial ? 'islands#blueStarIcon' : 'islands#dotIcon';
-                
-                feature = {
-                    type: 'Feature',
-                    id: object.id,
-                    geometry: {
-                        type: 'Point',
-                        coordinates: [parseFloat(object.latitude), parseFloat(object.longitude)]
-                    },
-                    properties: {
-                        hintContent: `🟡 Точка №${object.id} (${object.list || 'Без списка'})`,
-                        balloonContent: getBalloonContent(object, style.icon),
-                        inspector: object.inspector,
-                        list: object.list,
-                        address: object.address,
-                        checklistLink: object.checklistLink,
-                        yandexDiskLink: object.yandexDiskLink
-                    },
-                    options: {
-                        preset: markerType,
-                        iconColor: style.status === 'active' ? style.color : '#808080',
-                        iconSize: [30, 30]
-                    }
-                };
-                objectManager.add({ type: 'FeatureCollection', features: [feature] });
+    if (newStatus === 'active') {
+        // 🔵 АКТИВНАЯ ТОЧКА - БОЛЬШОЙ КРУЖОК
+        feature = {
+            type: 'Feature',
+            id: object.id,
+            geometry: {
+                type: 'Point',
+                coordinates: [parseFloat(object.latitude), parseFloat(object.longitude)]
+            },
+            properties: {
+                hintContent: `🔵 АКТИВНА Точка №${object.id} (${object.list || 'Без списка'})`,
+                balloonContent: getBalloonContent(object, style.icon),
+                inspector: object.inspector,
+                list: object.list,
+                address: object.address,
+                checklistLink: object.checklistLink,
+                yandexDiskLink: object.yandexDiskLink
+            },
+            options: {
+                preset: 'islands#circleIcon',
+                iconColor: style.color,
+                iconSize: [50, 50]
             }
+        };
+        activeObjectsLayer.add({ type: 'FeatureCollection', features: [feature] });
+        
+    } else if (newStatus === 'completed') {
+        // ✅ ВЫПОЛНЕННАЯ ТОЧКА - МЕДИЦИНСКИЙ КРЕСТИК
+        feature = {
+            type: 'Feature',
+            id: object.id,
+            geometry: {
+                type: 'Point',
+                coordinates: [parseFloat(object.latitude), parseFloat(object.longitude)]
+            },
+            properties: {
+                hintContent: `✅ ВЫПОЛНЕНА Точка №${object.id} (${object.list || 'Без списка'})`,
+                balloonContent: getBalloonContent(object, style.icon),
+                inspector: object.inspector,
+                list: object.list,
+                address: object.address,
+                checklistLink: object.checklistLink,
+                yandexDiskLink: object.yandexDiskLink
+            },
+            options: {
+                preset: 'islands#blueMedicalIcon',
+                iconColor: style.color,
+                iconSize: [30, 30]
+            }
+        };
+        objectManager.add({ type: 'FeatureCollection', features: [feature] });
+        
+    } else if (newStatus === 'new') {
+        // 🟡 НОВАЯ ТОЧКА - СТАНДАРТНАЯ МЕТКА
+        const isImperial = object.inspector === 'Admin' || 
+                         (window.INSPECTORS_CONFIG[object.inspector] && 
+                          window.INSPECTORS_CONFIG[object.inspector].accessRights === 'Император');
+        const markerType = isImperial ? 'islands#blueStarIcon' : 'islands#dotIcon';
+        
+        feature = {
+            type: 'Feature',
+            id: object.id,
+            geometry: {
+                type: 'Point',
+                coordinates: [parseFloat(object.latitude), parseFloat(object.longitude)]
+            },
+            properties: {
+                hintContent: `🟡 Точка №${object.id} (${object.list || 'Без списка'})`,
+                balloonContent: getBalloonContent(object, style.icon),
+                inspector: object.inspector,
+                list: object.list,
+                address: object.address,
+                checklistLink: object.checklistLink,
+                yandexDiskLink: object.yandexDiskLink
+            },
+            options: {
+                preset: markerType,
+                iconColor: style.status === 'active' ? style.color : '#808080',
+                iconSize: [30, 30]
+            }
+        };
+        objectManager.add({ type: 'FeatureCollection', features: [feature] });
+    }
 
-            console.log('✅ Точечное обновление завершено:', objectId, newStatus);
-            
-            // 🔥 ОБНОВЛЯЕМ БАЛЛУН ЕСЛИ ОН ОТКРЫТ
-            setTimeout(() => {
-                const activeBalloon = objectManager.objects.balloon.getData() || activeObjectsLayer.objects.balloon.getData();
-                if (activeBalloon && activeBalloon.feature.id == objectId) {
-                    showObjectBalloon(objectId);
-                }
-            }, 100);
+    console.log('✅ Точечное обновление завершено:', objectId, newStatus);
+    
+    // 🔥 ОБНОВЛЯЕМ БАЛЛУН ЕСЛИ ОН ОТКРЫТ
+    setTimeout(() => {
+        const activeBalloon = objectManager.objects.balloon.getData() || activeObjectsLayer.objects.balloon.getData();
+        if (activeBalloon && activeBalloon.feature.id == objectId) { // 🔥 ИСПРАВЛЕНО: == вместо ===
+            showObjectBalloon(objectId);
         }
+    }, 100);
+}
 
         function showObjectBalloon(objectId) {
-            const objectIdStr = objectId.toString();
-    const object = objectManager.objects.getById(objectIdStr) || activeObjectsLayer.objects.getById(objectIdStr);
-    
-    if (object) {
-        if (objectManager.objects.getById(objectIdStr)) {
-            objectManager.objects.balloon.open(objectIdStr);
-        } else {
-            activeObjectsLayer.objects.balloon.open(objectIdStr);
+            const object = objectManager.objects.getById(objectId) || activeObjectsLayer.objects.getById(objectId);
+            if (object) {
+                if (objectManager.objects.getById(objectId)) {
+                    objectManager.objects.balloon.open(objectId);
+                } else {
+                    activeObjectsLayer.objects.balloon.open(objectId);
+                }
+            }
         }
-    }
-}
 
         function getBalloonContent(obj, icon) {
             const isNew = !obj.entryTime && !obj.exitTime;
@@ -2086,69 +2156,60 @@ function updateListCounters() {
 
         // 🔥 РАБОТА С ТОЧКАМИ - УЛУЧШЕННАЯ ВЕРСИЯ
         function markEntry(objectId) {
-             const objectIdStr = objectId.toString();
-    const object = objectsData.find(obj => obj.id === objectIdStr);
-    
+    const object = objectsData.find(obj => obj.id == objectId); // 🔥 ИСПРАВЛЕНО: == вместо ===
     if (!object) {
-        console.error('❌ Объект не найден:', objectId, 'тип:', typeof objectId, 'ищем:', objectIdStr);
         showNotification('❌ Объект не найден', 'error');
         return;
     }
-            
-            const canMarkEntryExit = (userAccessRights === 'Император' || userAccessRights === 'Администратор') || 
-                                   isSameInspector(object.inspector, currentUser);
-            
-            if (!canMarkEntryExit) {
-                showNotification('❌ Недостаточно прав для отметки входа на чужой объект', 'error');
-                return;
-            }
+    
+    const canMarkEntryExit = (userAccessRights === 'Император' || userAccessRights === 'Администратор') || 
+                           isSameInspector(object.inspector, currentUser);
+    
+    if (!canMarkEntryExit) {
+        showNotification('❌ Недостаточно прав для отметки входа на чужой объект', 'error');
+        return;
+    }
 
-            if (userAccessRights === 'Инспектор') {
-                const canEnter = canInspectorEnterObject(currentUser, objectId);
-                if (!canEnter.canEnter) {
-                    showNotification('❌ ' + canEnter.message, 'error');
-                    if (canEnter.activeObjectId) {
-                        setTimeout(() => {
-                            const activeObj = objectsData.find(o => o.id == canEnter.activeObjectId);
-                            if (activeObj) {
-                                map.setCenter([parseFloat(activeObj.latitude), parseFloat(activeObj.longitude)], 17);
-                                showObjectBalloon(activeObj.id);
-                            }
-                        }, 1000);
+    if (userAccessRights === 'Инспектор') {
+        const canEnter = canInspectorEnterObject(currentUser, objectId);
+        if (!canEnter.canEnter) {
+            showNotification('❌ ' + canEnter.message, 'error');
+            if (canEnter.activeObjectId) {
+                setTimeout(() => {
+                    const activeObj = objectsData.find(o => o.id == canEnter.activeObjectId); // 🔥 ИСПРАВЛЕНО: == вместо ===
+                    if (activeObj) {
+                        map.setCenter([parseFloat(activeObj.latitude), parseFloat(activeObj.longitude)], 17);
+                        showObjectBalloon(activeObj.id);
                     }
-                    return;
-                }
+                }, 1000);
             }
-
-            performMarkEntry(objectId);
+            return;
         }
+    }
+
+    performMarkEntry(objectId);
+}
 
         function markExit(objectId) {
-            const objectIdStr = objectId.toString();
-    const object = objectsData.find(obj => obj.id === objectIdStr);
-    
+    const object = objectsData.find(obj => obj.id == objectId); // 🔥 ИСПРАВЛЕНО: == вместо ===
     if (!object) {
-        console.error('❌ Объект не найден:', objectId, 'тип:', typeof objectId, 'ищем:', objectIdStr);
         showNotification('❌ Объект не найден', 'error');
         return;
     }
-            
-            const canMarkEntryExit = (userAccessRights === 'Император' || userAccessRights === 'Администратор') || 
-                                   isSameInspector(object.inspector, currentUser);
-            
-            if (!canMarkEntryExit) {
-                showNotification('❌ Недостаточно прав для отметки выхода на чужой объект', 'error');
-                return;
-            }
+    
+    const canMarkEntryExit = (userAccessRights === 'Император' || userAccessRights === 'Администратор') || 
+                           isSameInspector(object.inspector, currentUser);
+    
+    if (!canMarkEntryExit) {
+        showNotification('❌ Недостаточно прав для отметки выхода на чужой объект', 'error');
+        return;
+    }
 
-            performMarkExit(objectId);
-        }
+    performMarkExit(objectId);
+}
 
        function performMarkEntry(objectId) {
     showNotification('🔄 Отмечаем вход...', 'success');
-    
-    // 🔥 ПРЕОБРАЗУЕМ ID В СТРОКУ ДЛЯ ПОИСКА
-    const objectIdStr = objectId.toString();
     
     const callbackName = 'entryCallback_' + Date.now();
     
@@ -2166,7 +2227,7 @@ function updateListCounters() {
             showNotification(`✅ Вход отмечен для точки ${objectId}`, 'success');
             
             // 🔥 МГНОВЕННОЕ ОБНОВЛЕНИЕ КАРТЫ И ДАННЫХ
-            const object = objectsData.find(obj => obj.id === objectIdStr);
+            const object = objectsData.find(obj => obj.id == objectId); // 🔥 ИСПРАВЛЕНО: == вместо ===
             if (object) {
                 object.entryTime = new Date().toISOString();
                 updateSinglePointOnMap(objectId, 'active');
@@ -2190,11 +2251,8 @@ function updateListCounters() {
     cleanupCallback();
 }
 
-                function performMarkExit(objectId) {
+       function performMarkExit(objectId) {
     showNotification('🔄 Отмечаем выход...', 'success');
-    
-    // 🔥 ПРЕОБРАЗУЕМ ID В СТРОКУ ДЛЯ ПОИСКА
-    const objectIdStr = objectId.toString();
     
     const callbackName = 'exitCallback_' + Date.now();
     
@@ -2214,7 +2272,7 @@ function updateListCounters() {
             showNotification(`✅ Выход отмечен и точка ${objectId} выполнена`, 'success');
             
             // 🔥 МГНОВЕННОЕ ОБНОВЛЕНИЕ КАРТЫ И ДАННЫХ
-            const object = objectsData.find(obj => obj.id === objectIdStr);
+            const object = objectsData.find(obj => obj.id == objectId); // 🔥 ИСПРАВЛЕНО: == вместо ===
             if (object) {
                 object.exitTime = new Date().toISOString();
                 updateSinglePointOnMap(objectId, 'completed');
@@ -2250,12 +2308,8 @@ function updateListCounters() {
         return;
     }
     
-    // 🔥 ПРЕОБРАЗУЕМ ID В СТРОКУ ДЛЯ ПОИСКА
-    const objectIdStr = objectId.toString();
-    const object = objectsData.find(obj => obj.id === objectIdStr);
-    
+    const object = objectsData.find(obj => obj.id == objectId); // 🔥 ИСПРАВЛЕНО: == вместо ===
     if (!object) {
-        console.error('❌ Объект не найден:', objectId, 'тип:', typeof objectId, 'ищем:', objectIdStr);
         showNotification('❌ Объект не найден', 'error');
         return;
     }
@@ -2282,102 +2336,99 @@ function updateListCounters() {
     };
     
     window[callbackName] = function(result) {
-                cleanupCallback();
-                if (result.success && result.updated) {
-                    showNotification(`✅ Вход отменен для точки ${objectId}`, 'success');
-                    
-                    // 🔥 МГНОВЕННОЕ ОБНОВЛЕНИЕ КАРТЫ
-                    const object = objectsData.find(obj => obj.id == objectId);
-                    if (object) {
-                        object.entryTime = '';
-                        updateSinglePointOnMap(objectId, 'new');
-                    }
-                    
-                    loadData();
-                } else {
-                    showNotification('❌ Ошибка: ' + (result.message || 'Не удалось отменить вход'), 'error');
-                }
-            };
+        cleanupCallback();
+        if (result.success && result.updated) {
+            showNotification(`✅ Вход отменен для точки ${objectId}`, 'success');
             
-            const url = `${SCRIPT_URL}?action=cancelEntry&objectId=${objectId}&callback=${callbackName}`;
-            const script = document.createElement('script');
-            script.src = url;
-            script.onerror = function() {
-                cleanupCallback();
-                showNotification('❌ Ошибка соединения с сервером', 'error');
-            };
-            document.head.appendChild(script);
-            cleanupCallback();
+            // 🔥 МГНОВЕННОЕ ОБНОВЛЕНИЕ КАРТЫ
+            const object = objectsData.find(obj => obj.id == objectId); // 🔥 ИСПРАВЛЕНО: == вместо ===
+            if (object) {
+                object.entryTime = '';
+                updateSinglePointOnMap(objectId, 'new');
+            }
+            
+            loadData();
+        } else {
+            showNotification('❌ Ошибка: ' + (result.message || 'Не удалось отменить вход'), 'error');
         }
+    };
+    
+    const url = `${SCRIPT_URL}?action=cancelEntry&objectId=${objectId}&callback=${callbackName}`;
+    const script = document.createElement('script');
+    script.src = url;
+    script.onerror = function() {
+        cleanupCallback();
+        showNotification('❌ Ошибка соединения с сервером', 'error');
+    };
+    document.head.appendChild(script);
+    cleanupCallback();
+}
 
-        // 🔥 ПЕРЕРАСПРЕДЕЛЕНИЕ ИНСПЕКТОРА - УЛУЧШЕННАЯ ВЕРСИЯ
-       function reassignInspector(objectId, newInspector) {
+       // 🔥 ПЕРЕРАСПРЕДЕЛЕНИЕ ИНСПЕКТОРА - УЛУЧШЕННАЯ ВЕРСИЯ
+function reassignInspector(objectId, newInspector) {
     if (!(userAccessRights === 'Император' || userAccessRights === 'Администратор')) return;
     if (!newInspector) return;
     
-    // 🔥 ПРЕОБРАЗУЕМ ID В СТРОКУ ДЛЯ ПОИСКА
-    const objectIdStr = objectId.toString();
+    console.log('🟡 Переназначение:', objectId, '→', newInspector);
     
-    console.log('🟡 Переназначение:', objectIdStr, '→', newInspector);
+    // 🔥 ЗАКРЫВАЕМ БАЛЛУН ПЕРЕД ВЫПОЛНЕНИЕМ ДЕЙСТВИЯ
+    objectManager.objects.balloon.close();
+    activeObjectsLayer.objects.balloon.close();
+    
+    const callbackName = 'reassignCallback_' + Date.now();
+    
+    const cleanupCallback = function() {
+        setTimeout(() => {
+            if (window[callbackName]) {
+                delete window[callbackName];
+            }
+        }, 10000);
+    };
+    
+    window[callbackName] = function(result) {
+        cleanupCallback();
+        if (result.success) {
+            showNotification(`✅ Точка ${objectId} переназначена ${newInspector}`, 'success');
             
-            // 🔥 ЗАКРЫВАЕМ БАЛЛУН ПЕРЕД ВЫПОЛНЕНИЕМ ДЕЙСТВИЯ
-            objectManager.objects.balloon.close();
-            activeObjectsLayer.objects.balloon.close();
+            // 🔥 МГНОВЕННОЕ ОБНОВЛЕНИЕ КАРТЫ
+            const object = objectsData.find(obj => obj.id == objectId); // 🔥 ИСПРАВЛЕНО: == вместо ===
+            if (object) {
+                object.inspector = newInspector;
+                const isActive = object.entryTime && !object.exitTime;
+                updateSinglePointOnMap(objectId, isActive ? 'active' : 'new');
+            }
             
-            const callbackName = 'reassignCallback_' + Date.now();
-            
-            const cleanupCallback = function() {
+            // 🔥 АВТОМАТИЧЕСКОЕ ОБНОВЛЕНИЕ ФИЛЬТРОВ ЧЕРЕЗ 3 СЕКУНДЫ
+            setTimeout(() => {
+                // Скрываем все точки
+                deselectAllLists();
+                
+                // Мгновенно показываем все точки
                 setTimeout(() => {
-                    if (window[callbackName]) {
-                        delete window[callbackName];
-                    }
-                }, 10000);
-            };
+                    selectAllLists();
+                    updateMap();
+                }, 100);
+                
+                showNotification('🔄 Обновление фильтров для отображения изменений', 'success');
+            }, 3000);
             
-            window[callbackName] = function(result) {
-                cleanupCallback();
-                if (result.success) {
-                    showNotification(`✅ Точка ${objectId} переназначена ${newInspector}`, 'success');
-                    
-                    // 🔥 МГНОВЕННОЕ ОБНОВЛЕНИЕ КАРТЫ
-                    const object = objectsData.find(obj => obj.id === objectId);
-                    if (object) {
-                        object.inspector = newInspector;
-                        const isActive = object.entryTime && !object.exitTime;
-                        updateSinglePointOnMap(objectId, isActive ? 'active' : 'new');
-                    }
-                    
-                    // 🔥 АВТОМАТИЧЕСКОЕ ОБНОВЛЕНИЕ ФИЛЬТРОВ ЧЕРЕЗ 3 СЕКУНДЫ
-                    setTimeout(() => {
-                        // Скрываем все точки
-                        deselectAllLists();
-                        
-                        // Мгновенно показываем все точки
-                        setTimeout(() => {
-                            selectAllLists();
-                            updateMap();
-                        }, 100);
-                        
-                        showNotification('🔄 Обновление фильтров для отображения изменений', 'success');
-                    }, 3000);
-                    
-                } else {
-                    showNotification('❌ Ошибка переназначения: ' + result.message, 'error');
-                }
-            };
-            
-            const url = `${SCRIPT_URL}?action=reassign&objectId=${objectId}&newInspector=${encodeURIComponent(newInspector)}&callback=${callbackName}`;
-            const script = document.createElement('script');
-            script.src = url;
-            
-            script.onerror = function() {
-                cleanupCallback();
-                showNotification('❌ Ошибка соединения с сервером', 'error');
-            };
-            
-            document.head.appendChild(script);
-            cleanupCallback();
+        } else {
+            showNotification('❌ Ошибка переназначения: ' + result.message, 'error');
         }
+    };
+    
+    const url = `${SCRIPT_URL}?action=reassign&objectId=${objectId}&newInspector=${encodeURIComponent(newInspector)}&callback=${callbackName}`;
+    const script = document.createElement('script');
+    script.src = url;
+    
+    script.onerror = function() {
+        cleanupCallback();
+        showNotification('❌ Ошибка соединения с сервером', 'error');
+    };
+    
+    document.head.appendChild(script);
+    cleanupCallback();
+}
 
         // 🔥 РАБОЧИЙ ДЕНЬ
         function checkWorkDayStatus() {
@@ -3137,11 +3188,20 @@ function updateListCounters() {
         }
 
         // 🔥 ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ
-        function selectAllInspectors() {
+function selectAllInspectors() {
             const inspectorCheckboxes = document.querySelectorAll('#inspectorsList input[type="checkbox"]');
             inspectorCheckboxes.forEach(checkbox => checkbox.checked = true);
             updateFilters();
+            saveFilterState();
         }
+
+        function deselectAllInspectors() {
+            const inspectorCheckboxes = document.querySelectorAll('#inspectorsList input[type="checkbox"]');
+            inspectorCheckboxes.forEach(checkbox => checkbox.checked = false);
+            updateFilters();
+            saveFilterState();
+        }
+    
 
         function deselectAllInspectors() {
             const inspectorCheckboxes = document.querySelectorAll('#inspectorsList input[type="checkbox"]');
@@ -3164,25 +3224,29 @@ function updateListCounters() {
             });
         }
 
-        function selectAllLists() {
+       function selectAllLists() {
             const listCheckboxes = document.querySelectorAll('#listsList input[type="checkbox"]');
             listCheckboxes.forEach(checkbox => checkbox.checked = true);
             updateFilters();
+            saveFilterState();
         }
 
         function deselectAllLists() {
             const listCheckboxes = document.querySelectorAll('#listsList input[type="checkbox"]');
             listCheckboxes.forEach(checkbox => checkbox.checked = false);
             updateFilters();
+            saveFilterState();
         }
 
-       function onInspectorChange() {
-    updateFilters();
-    updateListCounters(); // 🔥 ДОБАВИТЬ ЭТУ СТРОЧКУ
-}
+        function onInspectorChange() {
+            updateFilters();
+            saveFilterState();
+            updateListCounters();
+        }
 
         function onListChange() {
             updateFilters();
+            saveFilterState();
         }
 
         function updateFilters() {
