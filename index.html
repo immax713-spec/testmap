@@ -815,7 +815,7 @@
 
     <script type="text/javascript">
         // 🔥 КОНФИГУРАЦИЯ
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxMX_q9XfVx1XsJvySUGAXiLbNYBfFqdTJIQuQjPtZ5s1yLh3xdp3W5MnjBLn7fCElBwg/exec';
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzBLM6DSadIf7CxLSjz0PjSQlYMd61JN931-Mor9AfkLLxnARmq-tZtHGxPXiYe4EJk/exec';
         
         // 🔥 КЛЮЧИ ДЛЯ LOCALSTORAGE
 const SESSION_KEY = 'map_session';
@@ -1247,7 +1247,7 @@ function resetFiltersToDefault() {
                 }
             };
             
-            const url = SCRIPT_URL + '?action=verifyPassword&username=' + encodeURIComponent(selectedUser) + '&password=' + encodeURIComponent(enteredPassword) + '&callback=' + callbackName;
+            const url = SCRIPT_URL + '?action=verifyPassword&inspector=' + encodeURIComponent(selectedUser) + '&password=' + encodeURIComponent(enteredPassword.trim()) + '&callback=' + callbackName;
             const script = document.createElement('script');
             script.src = url;
             script.onerror = function() {
